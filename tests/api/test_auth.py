@@ -1,4 +1,3 @@
-from clients.api_manager import ApiManager
 
 class TestAuthAPI:
     def test_register_user(self, api_manager, test_user):
