@@ -1,4 +1,4 @@
-from tests.constants import MOVIES_ENDPOINT, BASE_URL_MOVIES
+from constants import MOVIES_ENDPOINT, BASE_URL_MOVIES
 from custom_requester.custom_requester import CustomRequester
 
 class MoviesAPI(CustomRequester):

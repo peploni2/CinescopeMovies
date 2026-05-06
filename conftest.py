@@ -60,7 +60,7 @@ def film_data():
 def auth_api_manager():
     session = requests.Session()
     api_manager = ApiManager(session)
-    admin_creds = ["api1@gmail.com", "asdqwe123Q"]
+    admin_creds = ("api1@gmail.com", "asdqwe123Q")
     api_manager.auth_api.authenticate(admin_creds)
     yield api_manager
     session.close()
@@ -68,10 +68,9 @@ def auth_api_manager():
 @pytest.fixture(scope = "function")
 def create_test_film(auth_api_manager, film_data):
     response = auth_api_manager.movies_api.create_film(film_data)
-    response_data = response.json()
-    film_id = response_data["id"]
-    yield film_id
-    auth_api_manager.movies_api.delete_film(film_id)
+    film = response.json()
+    yield film
+    auth_api_manager.movies_api.delete_film(film["id"])
 
 @pytest.fixture(scope = "session")
 def new_film_data():

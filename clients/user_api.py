@@ -1,5 +1,5 @@
 from custom_requester.custom_requester import CustomRequester
-from tests.constants import BASE_URL
+from constants import BASE_URL
 
 class UserAPI(CustomRequester):
     def __init__(self, session):
