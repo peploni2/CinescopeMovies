@@ -11,8 +11,8 @@ __pycache__/
 *.env
 allure-results/
 allure/
-db_requester/sql_alchemy_client_simple_example/
-db_requester/test_file/
+db_requester/sql_alchemy_client_simple_example.py
+db_requester/test_file.py
 db_example/
 mock/
 PydanticExamples/
