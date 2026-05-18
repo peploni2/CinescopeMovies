@@ -9,4 +9,10 @@ __pycache__/
 *.log
 *.csv
 *.env
-.env
+allure-results/
+allure/
+db_requester/sql_alchemy_client_simple_example/
+db_requester/test_file/
+db_example/
+mock/
+PydanticExamples/
