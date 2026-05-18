@@ -1,29 +1,53 @@
 import pytest
+from models.base_models import CreatedFilmResponse, FilmData
 
 class TestMoviesAPI:
 
-    @pytest.mark.slow
-    def test_create_film(self, create_test_film, film_data):
-        response_data = create_test_film
+    def test_create_film_with_db(self, super_admin, db_helper, film_data: FilmData):
+        assert not db_helper.get_movie_by_name(film_data.name), "Фильм уже существует"
 
-        assert response_data["name"] == film_data["name"], "Имя не совпадает"
-        assert response_data["price"] == film_data["price"], "Цена не совпадает"
-        assert response_data["description"] == film_data["description"], "Описание не совпадает"
-        assert response_data["location"] == film_data["location"], "Город не совпадает"
-        assert response_data["published"] == film_data["published"], "Тип публикации не совпадает"
-        assert response_data["genreId"] == film_data["genreId"], "Жанр не совпадает"
+        response = super_admin.api.movies_api.create_film(film_data)
+        film_id = response.json()["id"]
+
+        assert db_helper.get_movie_by_id(film_id ), "Фильм не найден"
+
+        super_admin.api.movies_api.delete_film(film_id )
+
+        assert not db_helper.get_movie_by_id(film_id ), "Фильм не удален"
+
+    def test_delete_movie_with_db(self, super_admin, db_helper, film_data: FilmData):
+        movie_id = 57
+        if not db_helper.get_movie_by_id(movie_id):
+            db_helper.create_test_movie({"id": movie_id, **db_helper.api_movie_to_db(film_data)})
+
+        super_admin.api.movies_api.delete_film(movie_id)
+
+        super_admin.api.movies_api.get_film(movie_id, expected_status=404)
+
+
+    @pytest.mark.slow
+    def test_create_film(self, db_helper, create_test_film, film_data):
+        response_data = create_test_film
+        response_validate = CreatedFilmResponse(**response_data).model_dump()
+
+        assert response_validate["name"] == film_data.name, "Имя не совпадает"
+        assert response_validate["price"] == film_data.price, "Цена не совпадает"
+        assert response_validate["description"] == film_data.description, "Описание не совпадает"
+        assert response_validate["location"] == film_data.location, "Город не совпадает"
+        assert response_validate["published"] == film_data.published, "Тип публикации не совпадает"
+        assert response_validate["genreId"] == film_data.genreId, "Жанр не совпадает"
 
     def test_get_film_id(self, super_admin, create_test_film, film_data):
         film_id = create_test_film["id"]
         response = super_admin.api.movies_api.get_film(film_id)
         response_data = response.json()
 
-        assert response_data["name"] == film_data["name"], "Имя не совпадает"
-        assert response_data["price"] == film_data["price"], "Цена не совпадает"
-        assert response_data["description"] == film_data["description"], "Описание не совпадает"
-        assert response_data["location"] == film_data["location"], "Город не совпадает"
-        assert response_data["published"] == film_data["published"], "Тип публикации не совпадает"
-        assert response_data["genreId"] == film_data["genreId"], "Жанр не совпадает"
+        assert response_data["name"] == film_data.name, "Имя не совпадает"
+        assert response_data["price"] == film_data.price, "Цена не совпадает"
+        assert response_data["description"] == film_data.description, "Описание не совпадает"
+        assert response_data["location"] == film_data.location, "Город не совпадает"
+        assert response_data["published"] == film_data.published, "Тип публикации не совпадает"
+        assert response_data["genreId"] == film_data.genreId, "Жанр не совпадает"
 
     @pytest.mark.slow
     def test_delete_film(self, super_admin, film_data):

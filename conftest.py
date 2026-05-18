@@ -6,7 +6,10 @@ from clients.api_manager import ApiManager
 from resources.user_creds import SuperAdminCreds
 from entities.user import User
 from enums.roles import Roles
-from models.base_models import TestUser
+from models.base_models import TestUser, FilmData
+from sqlalchemy.orm import Session
+from db_requester.db_client import get_db_session
+from db_requester.db_helper import DBHelper
 
 faker = Faker()
 
@@ -67,22 +70,17 @@ def api_manager(session):
     return ApiManager(session)
 
 @pytest.fixture(scope = "function")
-def film_data():
-    random_film_name =  DataGenerator.generate_random_film_name()
-    random_price = DataGenerator.generate_random_price()
-    random_description = DataGenerator.generate_random_description()
-    random_location = DataGenerator.generate_random_location()
-    random_published = DataGenerator.generate_random_published()
-    random_genre = DataGenerator.generate_random_genre()
-    return {
-        "name": random_film_name,
-        "imageUrl": "https://image.url",
-        "price": random_price,
-        "description": random_description,
-        "location": random_location,
-        "published": random_published,
-        "genreId": random_genre
-    }
+def film_data() -> FilmData:
+    return FilmData(
+        name = DataGenerator.generate_random_film_name(),
+        imageUrl = "https://image.url",
+        price = DataGenerator.generate_random_price(),
+        description = DataGenerator.generate_random_description(),
+        location = DataGenerator.generate_random_location(),
+        published = DataGenerator.generate_random_published(),
+        genreId = DataGenerator.generate_random_genre()
+    )
+
 
 @pytest.fixture(scope = "session")
 def auth_api_manager():
@@ -95,7 +93,7 @@ def auth_api_manager():
 
 @pytest.fixture(scope = "function")
 def create_test_film(super_admin, film_data):
-    response = super_admin.api.movies_api.create_film(film_data)
+    response = super_admin.api.movies_api.create_film(film_data.model_dump())
     film = response.json()
     yield film
     super_admin.api.movies_api.delete_film(film["id"])
@@ -249,4 +247,24 @@ def registration_user_data():
         "passwordRepeat": random_password,
         "enums": [Roles.USER.value]
     }
+
+@pytest.fixture(scope="module")
+def db_session() -> Session:
+    db_session = get_db_session()
+    yield db_session
+    db_session.close()
+
+@pytest.fixture(scope="function")
+def db_helper(db_session) -> DBHelper:
+    db_helper = DBHelper(db_session)
+    return db_helper
+
+@pytest.fixture(scope = "function")
+def created_test_user(db_helper):
+    user = db_helper.create_test_user(DataGenerator.generate_user_data())
+    yield user
+    if db_helper.get_user_by_id(user.id):
+        db_helper.delete_user(user)
+
+
 
