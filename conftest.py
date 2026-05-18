@@ -98,23 +98,17 @@ def create_test_film(super_admin, film_data):
     yield film
     super_admin.api.movies_api.delete_film(film["id"])
 
-@pytest.fixture(scope = "session")
-def new_film_data():
-    random_film_name = DataGenerator.generate_random_film_name()
-    random_price = DataGenerator.generate_random_price()
-    random_description = DataGenerator.generate_random_description()
-    random_location = DataGenerator.generate_random_location()
-    random_published = DataGenerator.generate_random_published()
-    random_genre = DataGenerator.generate_random_genre()
-    return {
-        "name": random_film_name,
-        "imageUrl": "https://image.url",
-        "price": random_price,
-        "description": random_description,
-        "location": random_location,
-        "published": random_published,
-        "genreId": random_genre
-    }
+@pytest.fixture(scope = "function")
+def new_film_data() -> FilmData:
+    return FilmData(
+        name = DataGenerator.generate_random_film_name(),
+        imageUrl = "https://image.url",
+        price = DataGenerator.generate_random_price(),
+        description = DataGenerator.generate_random_description(),
+        location = DataGenerator.generate_random_location(),
+        published = DataGenerator.generate_random_published(),
+        genreId = DataGenerator.generate_random_genre()
+    )
 
 @pytest.fixture
 def movie_params():
