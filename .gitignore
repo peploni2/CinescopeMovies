@@ -8,7 +8,6 @@ __pycache__/
 *.xlsx
 *.log
 *.csv
-*.env
 allure-results/
 allure/
 db_requester/sql_alchemy_client_simple_example.py
