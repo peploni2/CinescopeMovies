@@ -92,11 +92,13 @@ def auth_api_manager():
     session.close()
 
 @pytest.fixture(scope = "function")
-def create_test_film(super_admin, film_data):
+def create_test_film(super_admin, db_helper,  film_data):
     response = super_admin.api.movies_api.create_film(film_data.model_dump())
     film = response.json()
     yield film
     super_admin.api.movies_api.delete_film(film["id"])
+    assert not db_helper.get_movie_by_id(film["id"]), "Фильм в БД не удалился"
+
 
 @pytest.fixture(scope = "function")
 def new_film_data() -> FilmData:
@@ -124,13 +126,14 @@ def movie_params():
     }
 
 @pytest.fixture(scope = "function")
-def invalid_film_data():
+def invalid_film_data(db_helper):
     random_film_name =  0
     random_price = DataGenerator.generate_random_price()
     random_description = DataGenerator.generate_random_description()
     random_location = DataGenerator.generate_random_location()
     random_published = DataGenerator.generate_random_published()
     random_genre = DataGenerator.generate_random_genre()
+
     return {
         "name": random_film_name,
         "imageUrl": "https://image.url",
@@ -140,6 +143,7 @@ def invalid_film_data():
         "published": random_published,
         "genreId": random_genre
     }
+
 
 @pytest.fixture(scope = "session")
 def user_session():
@@ -260,5 +264,18 @@ def created_test_user(db_helper):
     if db_helper.get_user_by_id(user.id):
         db_helper.delete_user(user)
 
+@pytest.fixture(scope = "function")
+def random_movie_id():
+    return DataGenerator.generate_random_int(4)
 
+@pytest.fixture(scope = "function")
+def create_db_film(db_helper, random_movie_id, film_data):
+    db_film = db_helper.get_movie_by_id(random_movie_id)
+    if not db_film:
+        db_film = db_helper.create_test_movie({"id": random_movie_id, **db_helper.api_movie_to_db(film_data)})
+
+    yield db_film
+    if db_helper.get_movie_by_id(random_movie_id):
+        db_helper.delete_movie(random_movie_id)
+    assert not db_helper.get_movie_by_id(random_movie_id), "Фильм не удалился в teardown"
 

@@ -32,7 +32,7 @@ class DBHelper:
         for obj in object_to_delete:
             if obj:
                 self.db_session.delete(obj)
-            self.db_session.commit()
+        self.db_session.commit()
 
     def get_movie_by_name(self, name: str):
         return self.db_session.query(MovieDBModel).filter(MovieDBModel.name == name).first()

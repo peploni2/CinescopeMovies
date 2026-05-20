@@ -45,7 +45,7 @@ class Location(str, Enum):
 
 class FilmData(BaseModel):
     name: str
-    imageUrl: str
+    imageUrl: Optional[str] = None
     price: int = Field(gt=0)
     description: str
     location: Location
@@ -57,13 +57,13 @@ class CreatedFilmResponse(BaseModel):
     name: str
     price: int = Field(gt = 0)
     description: str
-    imageUrl: str
+    imageUrl: Optional[str] = None
     location: Location
     published: bool
     genreId: int
     genre: Dict[str, str]
     createdAt: str
-    rating: int
+    rating: float
 
     @field_validator("createdAt")
     def validate_created_at(cls, value: str) -> str:
@@ -75,7 +75,7 @@ class CreatedFilmResponse(BaseModel):
 
 class Review(BaseModel):
     userId: str
-    rating: int
+    rating: float
     text: str
     createdAt: str
     user: Dict[str, str]
@@ -93,13 +93,13 @@ class GetFilmResponse(BaseModel):
     name: str
     price: int = Field(gt = 0)
     description: str
-    imageUrl: str
+    imageUrl: Optional[str] = None
     location: Location
     published: bool
     genreId: int
     genre: Dict[str, str]
     createdAt: str
-    rating: int
+    rating: float
     reviews: List[Review] = Field(default_factory=list)
 
     @field_validator("createdAt")
@@ -109,3 +109,10 @@ class GetFilmResponse(BaseModel):
         except ValueError:
             raise ValueError("Некорректный формат даты и времени")
         return value
+    
+class GetQueryFilmResponse(BaseModel):
+    movies: List[GetFilmResponse] = Field(default_factory = list)
+    count: int
+    page: int
+    pageSize: int
+    pageCount: int
