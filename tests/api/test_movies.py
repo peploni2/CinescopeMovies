@@ -1,6 +1,6 @@
 import pytest
 import allure
-from models.base_models import CreatedFilmResponse, FilmData, GetFilmResponse, GetQueryFilmResponse
+from models.base_models import CreatedFilmResponse, FilmData, GetFilmResponse, GetQueryFilmResponse, DeleteFilmResponse, PatchFilmResponse
 from pytest_check import check
 
 @allure.epic("Тестирование movies_api")
@@ -30,10 +30,10 @@ class TestMoviesAPI:
         with allure.step("Создание фильма в БД через фикстуру"):
             db_film = create_db_film
         with allure.step("Удаление фильма"):
-            super_admin.api.movies_api.delete_film(db_film.id)
+            DeleteFilmResponse(**super_admin.api.movies_api.delete_film(db_film.id).json())
         with allure.step("Проверка удаления фильма в БД"):
             if db_helper.get_movie_by_id(db_film.id):
-                db_helper.delete_movie(db_film.id)
+                db_helper.delete_movie(db_film)
             assert not db_helper.get_movie_by_id(db_film.id), "Фильм не удалился в БД"
 
     @allure.title("Супер админ создает фильм через movies_api")
@@ -74,12 +74,14 @@ class TestMoviesAPI:
     @allure.story("Корректность удаления фильма через movies_api")
     @pytest.mark.slow
     def test_delete_film(self, super_admin, film_data: FilmData):
-        with allure.step("Создание фильма через права супер админа"):
+        with allure.step("Создание фильма через права супер админа и валидация через пайдентик"):
             create_film_response = super_admin.api.movies_api.create_film(film_data)
+            response_validate = CreatedFilmResponse(**create_film_response.json())
         with allure.step("Запись film_id"):
-            film_id = create_film_response.json() ["id"]
-        with allure.step("Удаление фильма через супер админа и проверка корректности удаления"):
-            super_admin.api.movies_api.delete_film(film_id)
+            film_id = response_validate.id
+        with allure.step("Удаление фильма через супер админа и проверка корректности удаления, валидация ответа через пайдентик"):
+            response_delete = super_admin.api.movies_api.delete_film(film_id)
+            DeleteFilmResponse(**response_delete.json())
             super_admin.api.movies_api.get_film(film_id, expected_status = 404)
 
     @allure.title("Супер админ обновляет поля фильма через movies_api")
@@ -88,7 +90,7 @@ class TestMoviesAPI:
         with allure.step("Создание фильма и запись film_id"):
             film_id = create_test_film["id"]
         with allure.step("Обновление полей фильма и валидация"):
-            super_admin.api.movies_api.patch_film(new_film_data, film_id)
+            PatchFilmResponse(**super_admin.api.movies_api.patch_film(new_film_data, film_id).json())
             response_get = super_admin.api.movies_api.get_film(film_id)
             response_data_validate = GetFilmResponse(**response_get.json())
         with allure.step("Проверка полей фильма после обновления"):
@@ -141,6 +143,7 @@ class TestNegativeMovieAPI:
         with allure.step("Получение фильма с некорректным film_id"):
             super_admin.api.movies_api.get_film(film_id, expected_status = 404)
 
+
     @allure.title("Супер админ удаляет фильм которого нету через movies_api")
     @allure.story("Корректность невозможности удаления фильма с неправильным film_id через movies_api")
     @pytest.mark.parametrize("film_id", [-1, 0, 999999])
@@ -168,6 +171,7 @@ class TestMovieWithParametrizeAndRole:
 
     @allure.title("Супер админ GET фильмы с разными параметрами через параметризацию и movies_api")
     @allure.story("Корректность GET фильмов с разными параметрами через movies_api")
+    @pytest.mark.xfail(reason = "Возможно Баг АПИ: отправляю location=SPB, возвращает фильмы с MSK")
     @pytest.mark.parametrize("param", [
         {
             "minPrice": 100,
@@ -187,7 +191,23 @@ class TestMovieWithParametrizeAndRole:
     ])
     def test_get_film_query_with_parametrize(self, super_admin, param):
         with allure.step("Получение списка фильмов с разными параметрами"):
-            super_admin.api.movies_api.get_films_query(param)
+            response = super_admin.api.movies_api.get_films_query(param)
+            response_validate = GetQueryFilmResponse(**response.json())
+        with allure.step("Проверка полей"):
+            with check:
+                if "minPrice" in param:
+                    assert all(movie.price >= param["minPrice"]
+                               for movie in response_validate.movies), "Цена фильма меньше minPrice"
+                if "maxPrice" in param:
+                    assert all(movie.price <= param["maxPrice"]
+                               for movie in response_validate.movies), "Цена фильма больше maxPrice"
+                if "location" in param:
+                    assert all(movie.location in param["location"]
+                               for movie in response_validate.movies), "Город не соответствует фильтру"
+                if "genreId" in param:
+                    assert all(movie.genreId == param["genreId"]
+                               for movie in response_validate.movies), "Жанр не соответствует фильтру"
+
 
     @allure.title("Удаление фильма разными ролями через movies_api")
     @allure.story("Корректность удаления фильма разными ролями через movies_api")

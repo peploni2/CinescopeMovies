@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, DateTime, Integer
+from sqlalchemy import Column, String, Boolean, DateTime, Integer, Float
 from sqlalchemy.orm import declarative_base
 from typing import Dict, Any
 from datetime import datetime
@@ -15,7 +15,7 @@ class MovieDBModel(Base):
     image_url = Column(String)
     location = Column(String)
     published = Column(Boolean)
-    rating = Column(Integer, default = 0)
+    rating = Column(Float, default = 0)
     genre_id = Column(Integer) # Тут вторичный ключ но пока пусто
     created_at = Column(DateTime, default = datetime.now)
 

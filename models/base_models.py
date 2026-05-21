@@ -109,10 +109,57 @@ class GetFilmResponse(BaseModel):
         except ValueError:
             raise ValueError("Некорректный формат даты и времени")
         return value
-    
+
+class MoviesResponse(BaseModel):
+    id: int
+    name: str
+    price: int = Field(gt = 0)
+    description: str
+    imageUrl: Optional[str] = None
+    location: Location
+    published: bool
+    genreId: int
+    genre: Dict[str, str]
+    createdAt: str
+    rating: float # Тут float потому что АПИ возвращает float и ругается на int
+
 class GetQueryFilmResponse(BaseModel):
-    movies: List[GetFilmResponse] = Field(default_factory = list)
+    movies: List[MoviesResponse] = Field(default_factory = list)
     count: int
     page: int
     pageSize: int
     pageCount: int
+
+class DeleteFilmResponse(BaseModel):
+    id: int
+    name: str
+    price: int = Field(gt = 0)
+    description: str
+    imageUrl: Optional[str] = None
+    location: Location
+    published: bool
+    genreId: int
+    genre: Dict[str, str]
+    createdAt: str
+    rating: float
+
+    @field_validator("createdAt")
+    def validate_created_at(cls, value: str) -> str:
+        try:
+            datetime.datetime.fromisoformat(value)
+        except ValueError:
+            raise ValueError("Некорректный формат даты и времени")
+        return value
+
+class PatchFilmResponse(BaseModel):
+    id: int
+    name: str
+    price: int = Field(gt=0)
+    description: str
+    imageUrl: str
+    location: Location
+    published: bool
+    genreId: int
+    genre: Dict[str, str]
+    createdAt: str
+    rating: float

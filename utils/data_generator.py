@@ -2,6 +2,7 @@ import random
 import string
 from faker import Faker
 import datetime
+from uuid import uuid4
 
 faker = Faker()
 
@@ -33,7 +34,7 @@ class DataGenerator:
 
     @staticmethod
     def generate_random_film_name():
-        return f"{faker.first_name()} {faker.last_name()}"
+        return f"{faker.first_name()} {faker.last_name()} {uuid4()}"
 
     @staticmethod
     def generate_random_price():

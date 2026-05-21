@@ -6,7 +6,7 @@ from clients.api_manager import ApiManager
 from resources.user_creds import SuperAdminCreds
 from entities.user import User
 from enums.roles import Roles
-from models.base_models import TestUser, FilmData
+from models.base_models import TestUser, FilmData, CreatedFilmResponse
 from sqlalchemy.orm import Session
 from db_requester.db_client import get_db_session
 from db_requester.db_helper import DBHelper
@@ -94,7 +94,7 @@ def auth_api_manager():
 @pytest.fixture(scope = "function")
 def create_test_film(super_admin, db_helper,  film_data):
     response = super_admin.api.movies_api.create_film(film_data.model_dump())
-    film = response.json()
+    film = CreatedFilmResponse(**response.json()).model_dump()
     yield film
     super_admin.api.movies_api.delete_film(film["id"])
     assert not db_helper.get_movie_by_id(film["id"]), "Фильм в БД не удалился"
@@ -275,7 +275,8 @@ def create_db_film(db_helper, random_movie_id, film_data):
         db_film = db_helper.create_test_movie({"id": random_movie_id, **db_helper.api_movie_to_db(film_data)})
 
     yield db_film
-    if db_helper.get_movie_by_id(random_movie_id):
-        db_helper.delete_movie(random_movie_id)
+    film_for_delete = db_helper.get_movie_by_id(random_movie_id)
+    if film_for_delete:
+        db_helper.delete_movie(film_for_delete)
     assert not db_helper.get_movie_by_id(random_movie_id), "Фильм не удалился в teardown"
 
