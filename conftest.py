@@ -10,6 +10,8 @@ from models.base_models import TestUser, FilmData, CreatedFilmResponse
 from sqlalchemy.orm import Session
 from db_requester.db_client import get_db_session
 from db_requester.db_helper import DBHelper
+from constants import DEFAULT_UI_TIMEOUT
+from utils.tools import Tools
 
 faker = Faker()
 
@@ -279,4 +281,27 @@ def create_db_film(db_helper, random_movie_id, film_data):
     if film_for_delete:
         db_helper.delete_movie(film_for_delete)
     assert not db_helper.get_movie_by_id(random_movie_id), "Фильм не удалился в teardown"
+
+@pytest.fixture(scope="session")
+def browser(playwright):
+    browser = playwright.chromium.launch(headless=False)
+    yield browser
+    browser.close()
+
+@pytest.fixture(scope="function")
+def context(browser):
+    context = browser.new_context()
+    context.tracing.start(screenshots=True, snapshots=True, sources=True)
+    context.set_default_timeout(DEFAULT_UI_TIMEOUT)
+    yield context
+    log_name = f"trace_{Tools.get_timestamp()}.zip"
+    trace_path = Tools.files_dir('playwright_trace', log_name)
+    context.tracing.stop(path=trace_path)
+    context.close()
+
+@pytest.fixture(scope="function")
+def page(context):
+    page = context.new_page()
+    yield page
+    page.close()
 

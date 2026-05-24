@@ -5,6 +5,8 @@ HEADERS = {
     "Accept": "application/json"
 }
 
+DEFAULT_UI_TIMEOUT = 30000
+
 LOGIN_ENDPOINT = "/login"
 REGISTER_ENDPOINT = "/register"
 MOVIES_ENDPOINT = "/movies"
