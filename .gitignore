@@ -21,3 +21,4 @@ other/
 *screenshot.png
 tests/ui/test_registration_page.py
 files/
+models/page_object_models.py
