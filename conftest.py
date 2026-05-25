@@ -12,6 +12,8 @@ from db_requester.db_client import get_db_session
 from db_requester.db_helper import DBHelper
 from constants import DEFAULT_UI_TIMEOUT
 from utils.tools import Tools
+from models.page_action_model import CinescopeLoginPage
+import random
 
 faker = Faker()
 
@@ -56,10 +58,19 @@ def test_admin_user():
     }
 
 @pytest.fixture(scope = "function")
-def registered_user(api_manager, test_user: TestUser) -> dict:
+def registered_user(db_helper, api_manager, test_user: TestUser) -> dict:
     response = api_manager.auth_api.register_user(test_user)
     registered_user = response.json()
-    return registered_user
+    user_id = registered_user["id"]
+    registered_user["password"] = test_user.password
+
+    yield registered_user
+
+    db_user = db_helper.get_user_by_id(user_id)
+    if db_user:
+        db_helper.delete_user(db_user)
+    assert db_helper.get_user_by_id(user_id) is None
+
 
 @pytest.fixture(scope = "session")
 def session():
@@ -259,12 +270,12 @@ def db_helper(db_session) -> DBHelper:
     db_helper = DBHelper(db_session)
     return db_helper
 
-@pytest.fixture(scope = "function")
+@pytest.fixture(scope = "function") #ХЭШИОВАНИЯ НЕТУ АПИ НЕ ПРИНИМАЕТ ПОЛЬЗОВАТЕЛЯ ЕСЛИ В БД ЛЕЖИТ НЕХЕШИРОВАННЫЙ ПАРОЛЬ
 def created_test_user(db_helper):
     user = db_helper.create_test_user(DataGenerator.generate_user_data())
     yield user
     if db_helper.get_user_by_id(user.id):
-        db_helper.delete_user(user)
+       db_helper.delete_user(user)
 
 @pytest.fixture(scope = "function")
 def random_movie_id():
@@ -304,4 +315,24 @@ def page(context):
     page = context.new_page()
     yield page
     page.close()
+
+@pytest.fixture(scope="function")
+def auth_page_for_ui(page, registered_user):
+    login_page = CinescopeLoginPage(page)
+
+    login_page.open()
+
+    login_page.login(registered_user["email"], registered_user["password"])
+
+    login_page.assert_was_redirect_to_home_page()
+    login_page.assert_allert_was_pop_up()
+    return page
+
+@pytest.fixture(scope="function")
+def feedback_text():
+    return DataGenerator.generate_random_description()
+
+@pytest.fixture(scope="function")
+def random_rating():
+    return random.choice([1, 2, 3, 4, 5])
 
