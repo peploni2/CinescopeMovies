@@ -5,16 +5,16 @@ from typing import Literal
 from utils.data_generator import DataGenerator
 
 class CinescopeMovieFeedback(BasePage):
-    def __init__(self, page: Page, film_id):
+    def __init__(self, page: Page):
         super().__init__(page)
-        self.url = f"{self.home_url}movies/{film_id}"
+        self.url = f"{self.home_url}movies/"
 
         self.feedback_text_area_input = page.get_by_role("textbox", name="Написать отзыв")
         self.push_button = page.get_by_role("button", name="Отправить")
         self.rating_selector = page.get_by_role("combobox")
 
-    def open(self):
-        self.open_url(self.url)
+    def open(self, film_id):
+        self.open_url(f"{self.url}{film_id}")
 
     @allure.step("Выбор рейтинга")
     def select_rating(self, rating: Literal[1, 2, 3, 4, 5]):
@@ -30,16 +30,20 @@ class CinescopeMovieFeedback(BasePage):
         self.select_rating(rating)
         self.click_element(self.push_button)
 
-    def assert_alert_was_pop_up(self):
-        self.check_pop_up_element_with_text("Отзыв успешно создан")
+    def assert_alert_was_pop_up(self, pop_up_text: str):
+        self.check_pop_up_element_with_text(pop_up_text)
 
     @allure.step("Поверка что поле ввода текста в отзыве доступно")
     def assert_feedback_text_area_is_enabled(self):
         expect(self.feedback_text_area_input).to_be_enabled()
 
-    @allure.step("Поверка что поле ввода текста в отзыве срыто")
+    @allure.step("Поверка что поле ввода текста в отзыве скрыто")
     def assert_feedback_text_area_is_hidden(self):
         expect(self.feedback_text_area_input).to_be_hidden()
+
+    @allure.step("Поверка что поле ввода текста в отзыве видно")
+    def assert_feedback_text_area_is_visible(self):
+        expect(self.feedback_text_area_input).to_be_visible()
 
 
 

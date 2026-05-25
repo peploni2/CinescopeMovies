@@ -19,6 +19,5 @@ mock/
 PydanticExamples/
 other/
 *screenshot.png
-tests/ui/test_registration_page.py
+tests/ui/test_example.py
 files/
-models/page_object_models.py
